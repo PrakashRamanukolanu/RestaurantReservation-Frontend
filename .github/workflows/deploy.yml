@@ -1,0 +1,46 @@
+name: Deploy React + Vite App to EC2
+
+on:
+  push:
+    branches:
+      - main  # Change this to match your default branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+    - name: Add EC2 to known_hosts
+      run: |
+        ssh-keyscan -H ec2-public-ip-or-domain >> ~/.ssh/known_hosts
+
+    - name: Install dependencies and build Vite app
+      run: |
+        npm install
+        npm run build  # Vite creates static files in the `dist` directory by default
+
+    - name: Deploy app files to EC2
+      run: |
+        ssh ubuntu@ec2-public-ip-or-domain << 'EOF'
+        mkdir -p /home/ubuntu/vite-app/
+        EOF
+        scp -r ./dist/* ubuntu@ec2-public-ip-or-domain:/home/ubuntu/vite-app/
+
+    - name: Start Vite app using PM2
+      run: |
+        ssh ubuntu@ec2-public-ip-or-domain << 'EOF'
+        cd /home/ubuntu/vite-app/
+        npm install -g serve pm2
+        pm2 stop vite-app || true  # Stop the running instance, if any
+        pm2 serve ./ 3000 --name "vite-app"
+        pm2 save
+        EOF
