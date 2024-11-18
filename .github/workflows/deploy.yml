@@ -21,7 +21,7 @@ jobs:
 
     - name: Add EC2 to known_hosts
       run: |
-        ssh-keyscan -H ec2-public-ip-or-domain >> ~/.ssh/known_hosts
+        ssh-keyscan -H 65.2.37.55 >> ~/.ssh/known_hosts
 
     - name: Install dependencies and build Vite app
       run: |
@@ -30,14 +30,14 @@ jobs:
 
     - name: Deploy app files to EC2
       run: |
-        ssh ubuntu@ec2-public-ip-or-domain << 'EOF'
+        ssh ubuntu@65.2.37.55 << 'EOF'
         mkdir -p /home/ubuntu/vite-app/
         EOF
-        scp -r ./dist/* ubuntu@ec2-public-ip-or-domain:/home/ubuntu/vite-app/
+        scp -r ./dist/* ubuntu@65.2.37.55:/home/ubuntu/vite-app/
 
     - name: Start Vite app using PM2
       run: |
-        ssh ubuntu@ec2-public-ip-or-domain << 'EOF'
+        ssh ubuntu@65.2.37.55 << 'EOF'
         cd /home/ubuntu/vite-app/
         npm install -g serve pm2
         pm2 stop vite-app || true  # Stop the running instance, if any
